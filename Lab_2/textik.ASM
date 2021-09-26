@@ -23,11 +23,11 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
 
         invoke  RegisterClassEx, wcex
         invoke  CreateWindowEx, ebx, className, windowName, WS_OVERLAPPEDWINDOW,\ ; or WS_POPUP or WS_MAXIMIZE,\
-                ebx, ebx , CW_USEDEFAULT , CW_USEDEFAULT, ebx, ebx, [hInst], ebx
+                CW_USEDEFAULT, CW_USEDEFAULT , CW_USEDEFAULT , CW_USEDEFAULT, ebx, ebx, [hInst], ebx
 
         mov     [hMainWnd], eax
         invoke  ShowWindow, eax, SW_SHOWNORMAL
-        invoke  UpdateWindow, [hMainWnd]
+       ; invoke  UpdateWindow, [hMainWnd]    с этим почему то не прилетает WM_PAINT
 
         invoke  GetClientRect, [hMainWnd], rect
 
@@ -35,7 +35,7 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
         mov     [hdc], eax
         invoke  CreateCompatibleDC, [hdc]
         mov     [hBackDC], eax
-        invoke  CreateCompatibleBitmap, [hdc], [rect.right], [rect.bottom]
+        invoke  CreateCompatibleBitmap, [hdc], 1920, 1080    ; GetSystemMetrics (for screen)
         mov     [hBackBMP], eax
         invoke  SelectObject, [hBackDC], [hBackBMP]
         invoke  ReleaseDC, ebx, [hdc]
@@ -67,26 +67,31 @@ proc WindowProc uses ebx esi edi,\
         xor     ebx, ebx
 
         mov     eax, [uMsg]
-      ;  cmp     eax, WM_PAINT
-      ;  je      .WMPaint
+        cmp     eax, WM_PAINT
+        je      .WMPaint
+        cmp     eax, WM_SIZE
+        je      .WMSize
         cmp     eax, WM_DESTROY
         je      .WMDestroy
 
         invoke  DefWindowProc, [hWnd], [uMsg], [wParam], [lParam]
         jmp     .ExitWindowProc
 
+.WMSize:
+        invoke  GetClientRect, [hMainWnd], rect
+        jmp     .returnZero
 
-;.WMPaint:
-     ;   stdcall Draw
+.WMPaint:
+        stdcall Draw
 
-  ;      lea     esi, [ps]
-  ;      invoke  BeginPaint, [hWnd], esi
- ;       mov     [hdc], eax
+        lea     esi, [ps]
+        invoke  BeginPaint, [hWnd], esi
+        mov     [hdc], eax
 
-       ; invoke  BitBlt, [hdc], 0, 0, [rect.right], [rect.bottom], [hBackDC], 0, 0, SRCCOPY
-  ;      invoke  EndPaint, [hWnd], esi
+        invoke  BitBlt, [hdc], 0, 0, [rect.right], [rect.bottom], [hBackDC], 0, 0, SRCCOPY
+        invoke  EndPaint, [hWnd], esi
 
-  ;      jmp     .returnZero
+        jmp     .returnZero
 
 .WMDestroy:
         invoke  PostQuitMessage, ebx
@@ -103,20 +108,90 @@ proc WindowProc uses ebx esi edi,\
 
 endp
 
-;proc Draw
+proc Draw
 
-;        invoke  StretchBlt, [hBackDC], 0, 0, [rect.right], [rect.bottom], [hBackgroundDC], 0, 0, 1920, 1080, SRCCOPY
+        locals
+                cellWidth       dd      ?
+                cellHeight      dd      ?
+        endl
 
-;.ReturnDraw:
-;        ret
-;endp
+        xor     edx, edx
+        mov     eax, [rect.right]
+        div     [ROW_COUNT]
+        mov     [cellWidth], eax
+        mov     [textRect.right], eax
+
+        xor     edx, edx
+        mov     eax, [MAX_LENGTH]
+        mul     [AV_WIDTH]
+        div     [cellWidth]
+        inc     eax
+        mul     [LINE_HEIGHT]
+        mov     [cellHeight], eax
+        mov     [textRect.bottom], eax
+
+
+       ; xor     edx, edx
+      ;  mov     eax, [rect.bottom]
+      ;  div     [LINE_COUNT]
+      ;  mov     [cellHeight], eax
+
+        invoke  GetStockObject, BLACK_BRUSH
+        invoke  SelectObject, [hBackDC], eax
+        invoke  FillRect, [hBackDC], rect, 0
+
+        invoke  GetStockObject, WHITE_PEN
+        invoke  SelectObject, [hBackDC], eax
+
+
+
+        invoke  Rectangle, [hBackDC], 2, 2, [cellWidth], [cellHeight]
+
+        invoke  DrawText, [hBackDC], text00, -1, textRect, textStyle, NULL
+
+      ;  invoke  StretchBlt, [hBackDC], 0, 0, [rect.right], [rect.bottom], [hBackgroundDC], 0, 0, 1920, 1080, SRCCOPY
+
+.ReturnDraw:
+        ret
+endp
+
+proc FindMaxLength uses ebx esi edi
+        locals
+                maxLength       dd      0
+        endl
+
+
+
+        ret              ; return maxLength
+endp
 
 section '.data' data readable writeable
 
 wcex            WNDCLASSEX sizeof.WNDCLASSEX, CS_HREDRAW or CS_VREDRAW, WindowProc, 0, 0,\
                            0, NULL, NULL, 0, NULL, className, 0
+
+textStyle       = DT_CENTER or DT_VCENTER or DT_WORDBREAK
+
 className       db 'Main_window_class', 0
-windowName      db 'Save Paimon!', 0
+windowName      db 'Durka', 0
+
+text00          db 'Genshin Impact', 0
+text01          db 'JOJO Bizzare Adventure', 0
+text02          db 'test', 0
+text03          db 'Tokyo Ghoul', 0
+text10          db '1000 - 7', 0
+text11          db 'STMicrocontrollers', 0
+text12          db 'The RECT structure defines a rectangle', 0
+text13          db 'test', 0
+text20          db 'The RECT structure defines a rectangle', 0
+text21          db 'The RECT structure defines a rectangle', 0
+text22          db 'The RECT structure defines a rectangle', 0
+text23          db 'The RECT structure defines a rectangle', 0      ; length = 38 + 1
+; DT_WORDBREAK - переносит слова по пробелам
+;
+
+textRect        RECT 5, 5, 400, 400
+
 msg             MSG
 rect            RECT
 hMainWnd        dd      ?
@@ -126,6 +201,12 @@ hPaimondBmp     dd      ?
 hBackDC         dd      ?
 hBackBMP        dd      ?
 hBackgroundDC   dd      ?
+
+ROW_COUNT       dd      4
+LINE_COUNT      dd      3
+MAX_LENGTH      dd      38
+LINE_HEIGHT     db      40
+AV_WIDTH        db      5        ; ширина буквы
 
 section '.idata' import data readable writeable
 
