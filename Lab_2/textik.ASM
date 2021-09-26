@@ -22,7 +22,7 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
         mov     [hInst], eax
 
         invoke  RegisterClassEx, wcex
-        invoke  CreateWindowEx, ebx, className, windowName, WS_OVERLAPPEDWINDOW,\ ; or WS_POPUP or WS_MAXIMIZE,\
+        invoke  CreateWindowEx, ebx, className, windowName, WS_OVERLAPPEDWINDOW,\
                 CW_USEDEFAULT, CW_USEDEFAULT , CW_USEDEFAULT , CW_USEDEFAULT, ebx, ebx, [hInst], ebx
 
         mov     [hMainWnd], eax
@@ -33,6 +33,9 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
 
         invoke  GetDC, ebx
         mov     [hdc], eax
+
+        invoke  GetTextMetricsA, eax, textMetrics
+
         invoke  CreateCompatibleDC, [hdc]
         mov     [hBackDC], eax
         invoke  CreateCompatibleBitmap, [hdc], 1920, 1080    ; GetSystemMetrics (for screen)
@@ -122,11 +125,15 @@ proc Draw
         mov     [textRect.right], eax
 
         xor     edx, edx
-        mov     eax, [MAX_LENGTH]
-        mul     [AV_WIDTH]
+        mov     eax, [MAX_LENGTH]                ; cellHeight = (MAX_LENGTH * tmAveCharWidth / cellWidth + 1) * (tmHeight + tmExternalLeading)
+        mul     [textMetrics.tmAveCharWidth]
+        xor     edx, edx
         div     [cellWidth]
         inc     eax
-        mul     [LINE_HEIGHT]
+        xor     edx, edx
+        mov     ecx, [textMetrics.tmHeight]
+        add     ecx, [textMetrics.tmExternalLeading]
+        mul     ecx            ; add tmExternalLeading need
         mov     [cellHeight], eax
         mov     [textRect.bottom], eax
 
@@ -145,9 +152,9 @@ proc Draw
 
 
 
-        invoke  Rectangle, [hBackDC], 2, 2, [cellWidth], [cellHeight]
+        invoke  Rectangle, [hBackDC], 0, 0, [cellWidth], [cellHeight]
 
-        invoke  DrawText, [hBackDC], text00, -1, textRect, textStyle, NULL
+        invoke  DrawText, [hBackDC], text12, -1, textRect, textStyle, NULL
 
       ;  invoke  StretchBlt, [hBackDC], 0, 0, [rect.right], [rect.bottom], [hBackgroundDC], 0, 0, 1920, 1080, SRCCOPY
 
@@ -190,10 +197,11 @@ text23          db 'The RECT structure defines a rectangle', 0      ; length = 3
 ; DT_WORDBREAK - переносит слова по пробелам
 ;
 
-textRect        RECT 5, 5, 400, 400
+textRect        RECT 0, 0, 400, 400
 
 msg             MSG
 rect            RECT
+textMetrics     TEXTMETRIC
 hMainWnd        dd      ?
 hInstance       dd      ?
 hBackgroundBmp  dd      ?
