@@ -27,7 +27,6 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
 
         mov     [hMainWnd], eax
         invoke  ShowWindow, eax, SW_SHOWNORMAL
-       ; invoke  UpdateWindow, [hMainWnd]    с этим почему то не прилетает WM_PAINT
 
         invoke  GetClientRect, [hMainWnd], rect
 
@@ -122,26 +121,17 @@ proc Draw uses ebx esi edi
         locals
                 cellWidth       dd      ?
                 cellHeight      dd      ?
-                cellRect        RECT    ?
+                cellRect        RECT    0, 0, 0, 0
         endl
 
-        mov     eax, [textRect.left]
-        mov     [cellRect.left], eax
-        mov     eax, [textRect.top]
-        mov     [cellRect.top], eax
-        mov     eax, [textRect.right]
-        mov     [cellRect.right], eax
-        mov     eax, [textRect.bottom]
-        mov     [cellRect.bottom], eax
-
-        xor     edx, edx
+        xor     edx, edx                        ; cellWidth = windowWidth/ ROW_COUNT
         mov     eax, [rect.right]
         div     [ROW_COUNT]
         mov     [cellWidth], eax
         mov     [cellRect.right], eax
 
         xor     edx, edx
-        mov     eax, [MAX_LENGTH]               ; cellHeight = (MAX_LENGTH * tmAveCharWidth / cellWidth + 1) * (tmHeight + tmExternalLeading)
+        mov     eax, [MAX_LENGTH]               ; cellHeight = (MAX_LENGTH * tmAveCharWidth / cellWidth + 1) * (tmHeight + tmExternalLeading) + 2 * tmAveCharWidth
         mul     [textMetrics.tmAveCharWidth]
         xor     edx, edx
         div     [cellWidth]
@@ -149,8 +139,9 @@ proc Draw uses ebx esi edi
         xor     edx, edx
         mov     ecx, [textMetrics.tmHeight]
         add     ecx, [textMetrics.tmExternalLeading]
-       ; add     ecx, [textMetrics.tmHeight]
         mul     ecx
+        add     eax, [textMetrics.tmAveCharWidth]
+        add     eax, [textMetrics.tmAveCharWidth]
         mov     [cellHeight], eax
         mov     [cellRect.bottom], eax
 
@@ -161,7 +152,6 @@ proc Draw uses ebx esi edi
         invoke  GetStockObject, WHITE_PEN
         invoke  SelectObject, [hBackDC], eax
 
-        lea     esi, [cellRect]
         mov     ecx, [LINE_COUNT]
         mov     edi, allText
 .LineLoop:
@@ -176,7 +166,7 @@ proc Draw uses ebx esi edi
         push    ecx
         invoke  Rectangle, [hBackDC], [cellRect.left], [cellRect.top], [cellRect.right], [cellRect.bottom]
 
-        invoke  DrawTextEx, [hBackDC], [edi], -1, esi, textStyle, NULL
+        stdcall DrawUserText, [cellRect.left], [cellRect.top], [cellRect.right], [cellRect.bottom], [edi]
 
         add     edi, 4
 
@@ -204,6 +194,31 @@ proc Draw uses ebx esi edi
         ret
 endp
 
+proc DrawUserText left, top, right, bottom, lineAdrr
+        locals
+                textRect        RECT    0, 0, 0, 0
+        endl
+
+        mov     eax, [left]
+        add     eax, [textMetrics.tmAveCharWidth]
+        mov     [textRect.left], eax
+        mov     eax, [top]
+        add     eax, [textMetrics.tmAveCharWidth]
+        mov     [textRect.top], eax
+        mov     eax, [right]
+        sub     eax, [textMetrics.tmAveCharWidth]
+        mov     [textRect.right], eax
+        mov     eax, [bottom]
+        sub     eax, [textMetrics.tmAveCharWidth]
+        mov     [textRect.bottom], eax
+
+        lea     esi, [textRect]
+        invoke  DrawTextEx, [hBackDC], [lineAdrr], -1, esi, textStyle, NULL
+
+        xor     eax, eax
+        ret
+endp
+
 proc FindMaxLength uses ebx esi edi
         locals
                 maxLength       dd      0
@@ -222,33 +237,43 @@ wcex            WNDCLASSEX sizeof.WNDCLASSEX, CS_HREDRAW or CS_VREDRAW, WindowPr
 textStyle       = DT_CENTER or DT_VCENTER or DT_WORDBREAK
 
 className       db 'Main_window_class', 0
-windowName      db 'Durka', 0
+windowName      db 'Dushnilovka', 0
 
-text00          db 'Genshin Impact', 0
-text01          db 'JOJO Bizzare Adventure', 0
-text02          db 'test', 0
-text03          db 'Tokyo Ghoul', 0
+text00          db 'This document provides a description,', 0
+text01          db 'specifications, and design related information on the MPU-9250 MotionTracking device.', 0
+text02          db 'The average width of characters in the font', 0
+text03          db 'HELP', 0
 text10          db '1000 - 7', 0
-text11          db 'STMicrocontrollers', 0
-text12          db 'The RECT structure defines a rectangle', 0
-text13          db 'test', 0
-text20          db 'The RECT structure defines a rectangle', 0
-text21          db 'The RECT structure defines a rectangle', 0
-text22          db 'The RECT structure defines a rectangle', 0
-text23          db 'The RECT structure defines a rectangle', 0      ; length = 38 + 1
+text11          db 'The wingdi.h header defines TEXTMETRIC as an alias', 0
+text12          db 'JOJO Bizarre Adventure', 0
+text13          db 'Very important text', 0
+text20          db 'I lose more than 4 hours', 0
+text21          db 'This register is used to lock the configuration of the port', 0
+text22          db ' \(*-*)/ ', 0
+text23          db 'The value of the first character defined in the font.', 0      ; length = 38 + 1
+text30          db 'This document provides a description,', 0
+text31          db 'specifications, and design related information on the MPU-9250 MotionTracking device.', 0
+text32          db 'The average width of characters in the font', 0
+text33          db 'HELP', 0
+text40          db '1000 - 7', 0
+text41          db 'The wingdi.h header defines TEXTMETRIC as an alias', 0
+text42          db 'JOJO Bizarre Adventure', 0
+text43          db 'Very important text', 0
+text50          db 'I lose more than 4 hours', 0
+text51          db 'This register is used to lock the configuration of the port', 0
+text52          db ' \(*-*)/ ', 0
+text53          db 'The value of the first character defined in the font.', 0      ; length = 38 + 1
 
 allText         dd text00, text01, text02, text03,\
-                   text10, text11, text12, text12,\
-                   text20, text21, text22, text23
-
-; DT_WORDBREAK - переносит слова по пробелам
-;
-
-textRect        RECT 0, 0, 400, 400
+                   text10, text11, text12, text13,\
+                   text20, text21, text22, text23,\
+                   text30, text31, text32, text33,\
+                   text40, text41, text42, text43,\
+                   text50, text51, text52, text53
 
 ROW_COUNT       dd      4
-LINE_COUNT      dd      3
-MAX_LENGTH      dd      38
+LINE_COUNT      dd      6
+MAX_LENGTH      dd      85
 
 msg             MSG
 rect            RECT
