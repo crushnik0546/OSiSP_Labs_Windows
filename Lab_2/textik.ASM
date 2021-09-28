@@ -38,8 +38,14 @@ proc WinMain, hInstance, hPrevInstance, lpCmdLine, nShowCmd
 
         invoke  CreateCompatibleDC, [hdc]
         mov     [hBackDC], eax
-        invoke  CreateCompatibleBitmap, [hdc], 1920, 1080    ; GetSystemMetrics (for screen)
+
+        invoke  GetSystemMetrics, SM_CXSCREEN
+        push    eax
+        invoke  GetSystemMetrics, SM_CYSCREEN
+        pop     ecx
+        invoke  CreateCompatibleBitmap, [hdc], ecx, eax
         mov     [hBackBMP], eax
+
         invoke  SelectObject, [hBackDC], [hBackBMP]
         invoke  ReleaseDC, ebx, [hdc]
 
@@ -111,21 +117,31 @@ proc WindowProc uses ebx esi edi,\
 
 endp
 
-proc Draw
+proc Draw uses ebx esi edi
 
         locals
                 cellWidth       dd      ?
                 cellHeight      dd      ?
+                cellRect        RECT    ?
         endl
+
+        mov     eax, [textRect.left]
+        mov     [cellRect.left], eax
+        mov     eax, [textRect.top]
+        mov     [cellRect.top], eax
+        mov     eax, [textRect.right]
+        mov     [cellRect.right], eax
+        mov     eax, [textRect.bottom]
+        mov     [cellRect.bottom], eax
 
         xor     edx, edx
         mov     eax, [rect.right]
         div     [ROW_COUNT]
         mov     [cellWidth], eax
-        mov     [textRect.right], eax
+        mov     [cellRect.right], eax
 
         xor     edx, edx
-        mov     eax, [MAX_LENGTH]                ; cellHeight = (MAX_LENGTH * tmAveCharWidth / cellWidth + 1) * (tmHeight + tmExternalLeading)
+        mov     eax, [MAX_LENGTH]               ; cellHeight = (MAX_LENGTH * tmAveCharWidth / cellWidth + 1) * (tmHeight + tmExternalLeading)
         mul     [textMetrics.tmAveCharWidth]
         xor     edx, edx
         div     [cellWidth]
@@ -133,15 +149,10 @@ proc Draw
         xor     edx, edx
         mov     ecx, [textMetrics.tmHeight]
         add     ecx, [textMetrics.tmExternalLeading]
-        mul     ecx            ; add tmExternalLeading need
+       ; add     ecx, [textMetrics.tmHeight]
+        mul     ecx
         mov     [cellHeight], eax
-        mov     [textRect.bottom], eax
-
-
-       ; xor     edx, edx
-      ;  mov     eax, [rect.bottom]
-      ;  div     [LINE_COUNT]
-      ;  mov     [cellHeight], eax
+        mov     [cellRect.bottom], eax
 
         invoke  GetStockObject, BLACK_BRUSH
         invoke  SelectObject, [hBackDC], eax
@@ -150,11 +161,42 @@ proc Draw
         invoke  GetStockObject, WHITE_PEN
         invoke  SelectObject, [hBackDC], eax
 
+        lea     esi, [cellRect]
+        mov     ecx, [LINE_COUNT]
+        mov     edi, allText
+.LineLoop:
+        push    [cellRect.left]
+        push    [cellRect.top]
+        push    [cellRect.right]
+        push    [cellRect.bottom]
 
+        push    ecx
+        mov     ecx, [ROW_COUNT]
+.RowLoop:
+        push    ecx
+        invoke  Rectangle, [hBackDC], [cellRect.left], [cellRect.top], [cellRect.right], [cellRect.bottom]
 
-        invoke  Rectangle, [hBackDC], 0, 0, [cellWidth], [cellHeight]
+        invoke  DrawTextEx, [hBackDC], [edi], -1, esi, textStyle, NULL
 
-        invoke  DrawText, [hBackDC], text12, -1, textRect, textStyle, NULL
+        add     edi, 4
+
+        mov     eax, [cellWidth]
+        add     [cellRect.left], eax
+        add     [cellRect.right], eax
+        pop     ecx
+        loop    .RowLoop
+.EndRowLoop:
+        pop     ecx
+        pop     [cellRect.bottom]
+        pop     [cellRect.right]
+        pop     [cellRect.top]
+        pop     [cellRect.left]
+
+        mov     eax, [cellHeight]
+        add     [cellRect.top], eax
+        add     [cellRect.bottom], eax
+
+        loop    .LineLoop
 
       ;  invoke  StretchBlt, [hBackDC], 0, 0, [rect.right], [rect.bottom], [hBackgroundDC], 0, 0, 1920, 1080, SRCCOPY
 
@@ -194,14 +236,24 @@ text20          db 'The RECT structure defines a rectangle', 0
 text21          db 'The RECT structure defines a rectangle', 0
 text22          db 'The RECT structure defines a rectangle', 0
 text23          db 'The RECT structure defines a rectangle', 0      ; length = 38 + 1
+
+allText         dd text00, text01, text02, text03,\
+                   text10, text11, text12, text12,\
+                   text20, text21, text22, text23
+
 ; DT_WORDBREAK - переносит слова по пробелам
 ;
 
 textRect        RECT 0, 0, 400, 400
 
+ROW_COUNT       dd      4
+LINE_COUNT      dd      3
+MAX_LENGTH      dd      38
+
 msg             MSG
 rect            RECT
 textMetrics     TEXTMETRIC
+;drawTextParams  DRAWTEXTPARAMS sizeof.DRAWTEXTPARAMS, 5, 5, 4, 0
 hMainWnd        dd      ?
 hInstance       dd      ?
 hBackgroundBmp  dd      ?
@@ -209,12 +261,6 @@ hPaimondBmp     dd      ?
 hBackDC         dd      ?
 hBackBMP        dd      ?
 hBackgroundDC   dd      ?
-
-ROW_COUNT       dd      4
-LINE_COUNT      dd      3
-MAX_LENGTH      dd      38
-LINE_HEIGHT     db      40
-AV_WIDTH        db      5        ; ширина буквы
 
 section '.idata' import data readable writeable
 
