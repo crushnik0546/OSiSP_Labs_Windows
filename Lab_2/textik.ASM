@@ -188,8 +188,6 @@ proc Draw uses ebx esi edi
 
         loop    .LineLoop
 
-      ;  invoke  StretchBlt, [hBackDC], 0, 0, [rect.right], [rect.bottom], [hBackgroundDC], 0, 0, 1920, 1080, SRCCOPY
-
 .ReturnDraw:
         ret
 endp
@@ -219,28 +217,18 @@ proc DrawUserText left, top, right, bottom, lineAdrr
         ret
 endp
 
-proc FindMaxLength uses ebx esi edi
-        locals
-                maxLength       dd      0
-        endl
-
-
-
-        ret              ; return maxLength
-endp
-
 section '.data' data readable writeable
 
 wcex            WNDCLASSEX sizeof.WNDCLASSEX, CS_HREDRAW or CS_VREDRAW, WindowProc, 0, 0,\
                            0, NULL, NULL, 0, NULL, className, 0
 
-textStyle       = DT_CENTER or DT_VCENTER or DT_WORDBREAK
+textStyle       = DT_CENTER or DT_WORDBREAK or DT_EDITCONTROL
 
 className       db 'Main_window_class', 0
 windowName      db 'Dushnilovka', 0
 
 text00          db 'This document provides a description,', 0
-text01          db 'specifications, and design related information on the MPU-9250 MotionTracking device.', 0
+text01          db 'specifications, and design related information on the MPU-9250 MotionTracking device.', 0  ; 85
 text02          db 'The average width of characters in the font', 0
 text03          db 'HELP', 0
 text10          db '1000 - 7', 0
@@ -282,7 +270,6 @@ textMetrics     TEXTMETRIC
 hMainWnd        dd      ?
 hInstance       dd      ?
 hBackgroundBmp  dd      ?
-hPaimondBmp     dd      ?
 hBackDC         dd      ?
 hBackBMP        dd      ?
 hBackgroundDC   dd      ?
