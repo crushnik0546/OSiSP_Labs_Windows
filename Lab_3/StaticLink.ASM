@@ -13,7 +13,7 @@ section '.text' code readable executable
 
       ;  invoke  SetLastError,0
       ;  invoke  ShowLastError, HWND_DESKTOP
-        invoke  GetCurrentProcess
+        invoke  GetCurrentProcessId
         invoke  RewriteString, eax, 0, 0
 
        ; invoke  WriteConsole, [stdout], consoleMsg, 5, NULL, NULL

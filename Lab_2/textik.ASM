@@ -152,6 +152,10 @@ proc Draw uses ebx esi edi
         invoke  GetStockObject, WHITE_PEN
         invoke  SelectObject, [hBackDC], eax
 
+     ;   invoke  SetBkColor, [hBackDC], 0x00000000
+
+     ;   invoke  SetTextColor, [hBackDC], 0x007F7F7F
+
         mov     ecx, [LINE_COUNT]
         mov     edi, allText
 .LineLoop:

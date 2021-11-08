@@ -18,16 +18,17 @@ proc DllEntryPoint hinstDLL, fdwReason, lpvReserved
         ret
 endp
 
-; 1 - строка заменена
-; 0 - строка не была заменена
 ; BOOL RewriteString(int hProcess, char* findStr, char* newStr)
 proc RewriteString uses ebx edi esi,\
-     hProcess, findStr, newStr
+     processId, findStr, newStr
 
      locals
        lpSystemInfo     SYSTEM_INFO
        lpMemBasicInfo   MEMORY_BASIC_INFORMATION
      endl
+
+       invoke  OpenProcess, PROCESS_VM_READ or PROCESS_VM_WRITE or PROCESS_QUERY_INFORMATION, FALSE, [processId]
+       mov     [hProcess], eax
 
        lea     esi, [lpSystemInfo]
        invoke  GetSystemInfo, esi
@@ -36,16 +37,30 @@ proc RewriteString uses ebx edi esi,\
       ;         [lpSystemInfo.dwPageSize], [lpSystemInfo.lpMinimumApplicationAddress], [lpSystemInfo.lpMaximumApplicationAddress]
       ; invoke  MessageBox, HWND_DESKTOP, bufferString, NULL, MB_ICONERROR+MB_OK
 
-       lea     edi, [lpMemBasicInfo]
-       mov     eax, sizeof.MEMORY_BASIC_INFORMATION
-       invoke  VirtualQueryEx, [hProcess], lpAdress, edi, eax
-     ;  cinvoke sprintf, bufferString, formatMemInfo,\
-     ;          [lpMemBasicInfo.BaseAddress], [lpMemBasicInfo.AllocationBase],\
-     ;          [lpMemBasicInfo.AllocationProtect], dword [lpMemBasicInfo.PartitionId],\
-     ;          [lpMemBasicInfo.RegionSize], [lpMemBasicInfo.State],\
-     ;          [lpMemBasicInfo.Protect], [lpMemBasicInfo.Type]
-     ;  invoke  MessageBox, HWND_DESKTOP, bufferString, NULL, MB_ICONERROR+MB_OK
+       mov     esi, [lpSystemInfo.lpMaximumApplicationAddress]
+       mov     eax, [lpSystemInfo.lpMinimumApplicationAddress]
+       mov     [lpAddress], eax
 
+.NextAddress:
+       lea     edi, [lpMemBasicInfo]
+       invoke  VirtualQueryEx, [hProcess], lpAddress, edi, [sizeMemInfo]
+      ; cmp     [lpMemBasicInfo.State], MEM_COMMIT
+      ; jne     .AddAddress
+      ;
+       cinvoke sprintf, bufferString, formatMemInfo,\
+               [lpMemBasicInfo.BaseAddress], [lpMemBasicInfo.AllocationBase],\
+               [lpMemBasicInfo.AllocationProtect],\; dword [lpMemBasicInfo.PartitionId],\
+               [lpMemBasicInfo.RegionSize], [lpMemBasicInfo.State],\
+               [lpMemBasicInfo.Protect], [lpMemBasicInfo.Type]
+       invoke  MessageBox, HWND_DESKTOP, bufferString, NULL, MB_ICONERROR+MB_OK
+
+
+.AddAddress:
+       mov     eax, [lpMemBasicInfo.RegionSize]
+     ;  mov     eax, [lpSystemInfo.dwPageSize]
+       add     [lpAddress], eax
+       cmp     [lpAddress], esi
+       jb      .NextAddress
 
        mov     eax, TRUE
 .return:
@@ -74,9 +89,11 @@ endp
 section '.data' data readable writeable
 
 bufferString    db      255 dup (0)
-formatSysInfo   db      "dwPageSize %d, lpMinimumApplicationAddress %X, lpMaximumApplicationAddress %X", 0
-formatMemInfo   db      "BaseAddress %X, AllocationBase %X, AllocationProtect %X, PartitionId %d, RegionSize %X, State %X, Protect %X, Type %X", 0
-lpAdress        dd      0
+formatSysInfo   db      "dwPageSize %X, lpMinimumApplicationAddress %X, lpMaximumApplicationAddress %X", 0
+formatMemInfo   db      "BaseAddress %X, AllocationBase %X, AllocationProtect %X, RegionSize %X, State %X, Protect %X, Type %X", 0
+sizeMemInfo     dd      sizeof.MEMORY_BASIC_INFORMATION
+lpAddress       dd      ?
+hProcess        dd      ?
 
 section '.idata' import data readable writeable
 
@@ -92,7 +109,7 @@ section '.idata' import data readable writeable
 
 section '.edata' export data readable
 
-  export 'ERRORMSG.DLL',\
+  export 'userDLL.DLL',\
          ShowErrorMessage,'ShowErrorMessage',\
          ShowLastError,'ShowLastError',\
          RewriteString,'RewriteString'
