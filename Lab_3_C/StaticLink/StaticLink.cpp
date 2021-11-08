@@ -1,5 +1,6 @@
 ﻿#include <stdlib.h>
 #include <stdio.h>
+#include <Windows.h>
 #include "replace_string.h"
 
 int main()
@@ -10,7 +11,7 @@ int main()
     find_str = (char *)malloc(5 * sizeof(char));
     replace_str = (char *)malloc(5 * sizeof(char));
 
-    int k = replace_string(find_str, replace_str);
+    int k = replace_string(GetCurrentProcessId(), find_str, replace_str);
 
     printf("%d", k);
 

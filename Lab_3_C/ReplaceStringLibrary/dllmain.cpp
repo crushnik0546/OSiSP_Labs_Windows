@@ -1,5 +1,4 @@
-﻿// dllmain.cpp : Определяет точку входа для приложения DLL.
-#define STRING_REPLACE_EXPORTS
+﻿#define STRING_REPLACE_EXPORTS
 #include "replace_string.h"
 #include <Windows.h>
 #include <stdio.h>
@@ -22,8 +21,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 //------------------------------------------------------------
 
-int replace_string(char *find_str, char *replace_str)
+int replace_string(int pid, char *find_str, char *replace_str)
 {
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
+
     MessageBox(HWND_DESKTOP, L"Hello!", L"Hi", MB_OK);
     return 20;
 }
