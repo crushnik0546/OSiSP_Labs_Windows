@@ -8,6 +8,8 @@ int main()
     char *find_str;
     char *replace_str;
 
+    LPCSTR str1 = "Hello";
+
     find_str = (char *)malloc(5 * sizeof(char));
     replace_str = (char *)malloc(5 * sizeof(char));
 
