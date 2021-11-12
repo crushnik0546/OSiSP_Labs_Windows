@@ -11,16 +11,20 @@ int main()
     int str_len = strlen(find);
 
     char *find_str = (char *)malloc(sizeof(char) * str_len);
+
+    if (NULL == find_str)
+        return -1;
+
     memcpy(find_str, find, str_len);
     find_str[str_len] = 0;
 
-    printf("Adrees find_string: %X\n", find_str);
+    //printf("Adrees find_string: %X\n", find_str);
 
     /*char *replace_str = (char *)malloc(sizeof(char) * str_len);
     memcpy(replace_str, replace, str_len);
     replace_str[str_len] = 0;*/
 
-    //printf("String before dll call: %s\n", find);
+    printf("String before dll call: %s\n", find);
 
     LPCSTR str1 = "Hello";
 

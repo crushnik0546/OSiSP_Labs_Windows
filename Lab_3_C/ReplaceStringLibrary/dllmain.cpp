@@ -36,8 +36,8 @@ int replace_string(int pid, const char *find_str, const char *replace_str)
     char *start_adress = (char *)system_info.lpMinimumApplicationAddress;
     MEMORY_BASIC_INFORMATION memory_info;
 
-    char info_buffer[] = "BaseAddress: %X, AllocationBase: %X, AllocationProtect: %X, RegionSize: %X, State: %X, Protect: %X, Type: %X ";
-    char res_buffer[256];
+    /*char info_buffer[] = "BaseAddress: %X, AllocationBase: %X, AllocationProtect: %X, RegionSize: %X, State: %X, Protect: %X, Type: %X ";
+    char res_buffer[256];*/
     while (start_adress < system_info.lpMaximumApplicationAddress)
     {
         if (!VirtualQueryEx(hProcess, start_adress, &memory_info, sizeof(memory_info)))
@@ -72,8 +72,6 @@ int replace_string(int pid, const char *find_str, const char *replace_str)
                         real_addr[j] = replace_str[j];
                     }
                     real_addr[find_str_len] = 0;
-
-                    //memcpy(&page[i], replace_str, find_str_len);
                 }
             }
 
@@ -82,7 +80,5 @@ int replace_string(int pid, const char *find_str, const char *replace_str)
 
         start_adress += memory_info.RegionSize;
     }
-
-    MessageBox(HWND_DESKTOP, L"Hello!", L"Hi", MB_OK);
     return 0;
 }
