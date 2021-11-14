@@ -18,8 +18,8 @@ typedef struct {
 int main() {
     DWORD pid = get_process_id_by_name(L"TempInject.exe");
 
-    char find[] = "12345";
-    char replace[] = "09876";
+    char find[] = "abc";
+    char replace[] = "zxc";
 
     inject(pid, find, replace);
     
@@ -81,11 +81,17 @@ int inject(DWORD pid, char *find_str, char *replace_str)
     //---------------------------------------
 
     DWORD proc_offset = get_proc_offset(path_to_library, "replace_string");
-    
+
+    LPVOID find_str_addr = VirtualAllocEx(process, NULL, strlen(find_str) * sizeof(char), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    is_written = WriteProcessMemory(process, find_str_addr, find_str, strlen(find_str) * sizeof(char), NULL);
+
+    LPVOID replace_str_addr = VirtualAllocEx(process, NULL, strlen(replace_str) * sizeof(char), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    is_written = WriteProcessMemory(process, replace_str_addr, replace_str, strlen(replace_str) * sizeof(char), NULL);
+
     param_info params;
     params.pid = pid;
-    params.find_string = find_str;
-    params.replace_string = replace_str;
+    params.find_string = (char *)find_str_addr;
+    params.replace_string = (char *)replace_str_addr;
 
     params_addr = VirtualAllocEx(process, NULL, sizeof(param_info), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (NULL == params_addr)

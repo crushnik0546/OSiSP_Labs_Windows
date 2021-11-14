@@ -1,6 +1,6 @@
 ﻿#include "replace_string.h"
 
-typedef int __cdecl DLLPROC(int pid, const char *find_str, const char *replace_str);
+typedef int __cdecl DLLPROC(param_info* params);
 
 int main()
 {
