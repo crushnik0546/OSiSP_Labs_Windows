@@ -1,7 +1,5 @@
 ﻿#define STRING_REPLACE_EXPORTS
 #include "replace_string.h"
-#include <Windows.h>
-#include <stdio.h>
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -21,9 +19,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 //------------------------------------------------------------
 
-int replace_string(int pid, const char *find_str, const char *replace_str)
+int replace_string(param_info *params)
 {
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, params->pid);
 
     if (NULL == hProcess)
     {
@@ -61,15 +59,15 @@ int replace_string(int pid, const char *find_str, const char *replace_str)
                 return -1;
             }
 
-            int find_str_len = strlen(find_str);
+            int find_str_len = strlen(params->find_string);
             for (int i = 0; i < bytesRead - find_str_len; i++)
             {
-                if (0 == memcmp(find_str, &page[i], find_str_len))
+                if (0 == memcmp(params->find_string, &page[i], find_str_len))
                 {
                     char *real_addr = start_page + i;
                     for (int j = 0; j < find_str_len; j++)
                     {
-                        real_addr[j] = replace_str[j];
+                        real_addr[j] = params->replace_string[j];
                     }
                     real_addr[find_str_len] = 0;
                 }

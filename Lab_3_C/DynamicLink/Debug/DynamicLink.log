@@ -1,3 +1,2 @@
 ﻿  DynamicLink.cpp
-  DynamicLink.vcxproj -> D:\___БГУИР____\5 семестр\ОСИСП\_Labs_\Lab_3_C\DynamicLink\Debug\DynamicLink.exe
-  Скопировано файлов: 0.
+D:\___БГУИР____\5 семестр\ОСИСП\_Labs_\Lab_3_C\DynamicLink\DynamicLink.cpp(45,35): error C2198: DLLPROC (__cdecl *): слишком мало аргументов для вызова

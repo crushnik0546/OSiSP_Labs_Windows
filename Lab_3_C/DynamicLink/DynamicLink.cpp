@@ -1,6 +1,4 @@
-﻿#include <Windows.h>
-#include <stdio.h>
-#include "replace_string.h"
+﻿#include "replace_string.h"
 
 typedef int __cdecl DLLPROC(int pid, const char *find_str, const char *replace_str);
 
@@ -39,7 +37,12 @@ int main()
 
     printf("String before dll call: %s\n", find);
 
-    int k = string_replace(GetCurrentProcessId(), find_str, replace);
+    param_info params;
+    params.pid = GetCurrentProcessId();
+    params.find_string = find_str;
+    params.replace_string = replace;
+
+    int k = string_replace(&params);
 
     printf("String after dll call: %s\n", find_str);
 
