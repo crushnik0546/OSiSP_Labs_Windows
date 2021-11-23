@@ -10,6 +10,7 @@ HANDLE *thread_list;
 int threads_count;
 CRITICAL_SECTION crit_section;
 CONDITION_VARIABLE buffer_not_full, buffer_not_empty;
+volatile BOOL is_stop = FALSE;
 
 void create_thread_pool(int count)
 {
@@ -31,6 +32,8 @@ void create_thread_pool(int count)
 
 void delete_tread_pool()
 {
+	wait_all_tasks();
+
 	for (int i = 0; i < threads_count; i++)
 	{
 		CloseHandle(thread_list[i]);
@@ -49,15 +52,20 @@ void do_thread_work(int id)
 		EnterCriticalSection(&crit_section);
 		printf("---Thread id = %d entered in critical section---\n", id);
 
-		while (0 == queue_size)
+		while (0 == queue_size && FALSE == is_stop)
 		{
 			// если в очереди нет задач, то ждать пока они добавятся
 			SleepConditionVariableCS(&buffer_not_empty, &crit_section, INFINITE);
 		}
 
+		// запрос на окончание обработки очереди
+		if (TRUE == is_stop && 0 == queue_size)
+		{
+			LeaveCriticalSection(&crit_section);
+			break;
+		}
+
 		ts = queue[queue_offset];
-		printf("---Thread id = %d took task from queue---\n", id);
-		ts();
 
 		queue_size--;
 		queue_offset++;
@@ -71,7 +79,20 @@ void do_thread_work(int id)
 
 		// если не было места в очереди для новой задачи, то сообщить что оно появилось
 		WakeConditionVariable(&buffer_not_full);
+
+		printf("---Thread id = %d took task from queue---\n", id);
+		ts();
 	}
+}
+
+void wait_all_tasks()
+{
+	InterlockedCompareExchange(&is_stop, TRUE, FALSE);
+
+	WakeAllConditionVariable(&buffer_not_empty);
+	WakeAllConditionVariable(&buffer_not_full);
+
+	WaitForMultipleObjects(threads_count, thread_list, TRUE, INFINITE);
 }
 
 void add_task_for_threadpool(task ts)
