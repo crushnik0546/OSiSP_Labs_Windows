@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+
 #define BUFFER_SIZE 100
 
 void do_thread_work(int id);
@@ -6,19 +7,22 @@ void do_thread_work(int id);
 task queue[BUFFER_SIZE];
 int queue_offset = 0;
 int queue_size = 0;
+
 HANDLE *thread_list;
 int threads_count;
+
 CRITICAL_SECTION crit_section;
 CONDITION_VARIABLE buffer_not_full, buffer_not_empty;
+
 volatile BOOL is_stop = FALSE;
 
 void create_thread_pool(int count)
 {
-	threads_count = count;
 	InitializeCriticalSection(&crit_section);
 	InitializeConditionVariable(&buffer_not_full);
 	InitializeConditionVariable(&buffer_not_empty);
 
+	threads_count = count;
 	thread_list = (HANDLE *)malloc(threads_count * sizeof(HANDLE));
 	if (NULL != thread_list)
 	{
@@ -42,6 +46,35 @@ void delete_tread_pool()
 	free(thread_list);
 
 	DeleteCriticalSection(&crit_section);
+}
+
+void wait_all_tasks()
+{
+	InterlockedCompareExchange(&is_stop, TRUE, FALSE);
+
+	WakeAllConditionVariable(&buffer_not_empty);
+	WakeAllConditionVariable(&buffer_not_full);
+
+	WaitForMultipleObjects(threads_count, thread_list, TRUE, INFINITE);
+}
+
+void add_task_for_threadpool(task ts)
+{
+	EnterCriticalSection(&crit_section);
+	while (BUFFER_SIZE == queue_size)
+	{
+		// если буффер полный, то ожидание, пока будут обработаны tasks  в очереди
+		SleepConditionVariableCS(&buffer_not_full, &crit_section, INFINITE);
+	}
+
+	queue[(queue_offset + queue_size) % BUFFER_SIZE] = ts;
+
+	queue_size++;
+
+	LeaveCriticalSection(&crit_section);
+
+	// если поток ждет добавления элемента в очередь, то разбудить его
+	WakeConditionVariable(&buffer_not_empty);
 }
 
 void do_thread_work(int id)
@@ -83,33 +116,4 @@ void do_thread_work(int id)
 		printf("---Thread id = %d took task from queue---\n", id);
 		ts();
 	}
-}
-
-void wait_all_tasks()
-{
-	InterlockedCompareExchange(&is_stop, TRUE, FALSE);
-
-	WakeAllConditionVariable(&buffer_not_empty);
-	WakeAllConditionVariable(&buffer_not_full);
-
-	WaitForMultipleObjects(threads_count, thread_list, TRUE, INFINITE);
-}
-
-void add_task_for_threadpool(task ts)
-{
-	EnterCriticalSection(&crit_section);
-	while (BUFFER_SIZE == queue_size)
-	{
-		// если буффер полный, то ожидание, пока будут обработаны tasks  в очереди
-		SleepConditionVariableCS(&buffer_not_full, &crit_section, INFINITE);
-	}
-
-	queue[(queue_offset + queue_size) % BUFFER_SIZE] = ts;
-
-	queue_size++;
-
-	LeaveCriticalSection(&crit_section);
-
-	// если поток ждет добавления элемента в очередь, то разбудить его
-	WakeConditionVariable(&buffer_not_empty);
 }

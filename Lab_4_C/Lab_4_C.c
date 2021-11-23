@@ -28,20 +28,41 @@ void Hello4()
 
 int main()
 {
-    task ts1, ts2, ts3, ts4;
-    ts1 = Hello1;
-    ts2 = Hello2;
-    ts3 = Hello3;
-    ts4 = Hello4;
+    HANDLE file;
+    char *file_name = "text.txt";
 
-    create_thread_pool(4);
+    file = CreateFileA(file_name, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    add_task_for_threadpool(ts1);
-    add_task_for_threadpool(ts2);
-    add_task_for_threadpool(ts3);
-    add_task_for_threadpool(ts4);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        printf("Create File error\n");
+        return -1;
+    }
 
-    wait_all_tasks();
-    delete_tread_pool();
+    DWORD file_size = GetFileSize(file, NULL);
+    if (INVALID_FILE_SIZE == file_size)
+    {
+        CloseHandle(file);
+        printf("Get file size error\n");
+        return -1;
+    }
+
+    char *buffer = (char *)malloc((file_size + 1) * sizeof(char));
+
+    if (FALSE == ReadFile(file, buffer, file_size, NULL, NULL))
+    {
+        CloseHandle(file);
+        free(buffer);
+        printf("Read file failed\n");
+        return -1;
+    }
+
+    CloseHandle(file);
+
+
 }
 
+void sort_lines(char *lines[])
+{
+
+}
