@@ -1,5 +1,4 @@
-﻿#include <stdio.h>
-#include <queue>
+﻿#include "thread_pool.h"
 
 typedef void (*task)(void);
 
@@ -10,20 +9,14 @@ void Hello()
 
 int main()
 {
-    task ts1;
-    ts1 = Hello;
-    ts1();
+    task ts;
+    ts = Hello;
+    create_thread_pool(3);
 
-    std::queue<task> queue1;
-    queue1.push(ts1);
-    queue1.push(ts1);
-    queue1.push(ts1);
+    add_task_for_threadpool(ts);
+    add_task_for_threadpool(ts);
+    add_task_for_threadpool(ts);
 
-    for (int i = 0; i <= 2; i++)
-    {
-        task tmp = queue1.front();
-        tmp();
-        queue1.pop();
-    }
+    Sleep(5000);
 }
 

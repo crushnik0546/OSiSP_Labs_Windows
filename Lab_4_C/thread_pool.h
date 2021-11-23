@@ -5,7 +5,6 @@
 // delegate
 typedef void (*task)(void);
 
-std::queue<task> task_queue;
-HANDLE *thread_list;
-int threads_count;
-CRITICAL_SECTION crit_section;
+void create_thread_pool(int count);
+void delete_tread_pool();
+void add_task_for_threadpool(task ts);
