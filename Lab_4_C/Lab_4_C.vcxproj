@@ -139,8 +139,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Lab_4_C.cpp" />
-    <ClCompile Include="thread_pool.cpp" />
+    <ClCompile Include="Lab_4_C.c" />
+    <ClCompile Include="thread_pool.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="thread_pool.h" />
