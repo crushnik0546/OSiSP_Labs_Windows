@@ -4,7 +4,7 @@
 
 void do_thread_work(int id);
 
-task queue[BUFFER_SIZE];
+task_args queue[BUFFER_SIZE];
 int queue_offset = 0;
 int queue_size = 0;
 
@@ -58,7 +58,7 @@ void wait_all_tasks()
 	WaitForMultipleObjects(threads_count, thread_list, TRUE, INFINITE);
 }
 
-void add_task_for_threadpool(task ts)
+void add_task_for_threadpool(task_args task)
 {
 	EnterCriticalSection(&crit_section);
 	while (BUFFER_SIZE == queue_size)
@@ -67,7 +67,7 @@ void add_task_for_threadpool(task ts)
 		SleepConditionVariableCS(&buffer_not_full, &crit_section, INFINITE);
 	}
 
-	queue[(queue_offset + queue_size) % BUFFER_SIZE] = ts;
+	queue[(queue_offset + queue_size) % BUFFER_SIZE] = task;
 
 	queue_size++;
 
@@ -79,7 +79,7 @@ void add_task_for_threadpool(task ts)
 
 void do_thread_work(int id)
 {
-	task ts;
+	task_args task;
 	while (TRUE)
 	{
 		EnterCriticalSection(&crit_section);
@@ -98,7 +98,7 @@ void do_thread_work(int id)
 			break;
 		}
 
-		ts = queue[queue_offset];
+		task = queue[queue_offset];
 
 		queue_size--;
 		queue_offset++;
@@ -114,6 +114,6 @@ void do_thread_work(int id)
 		WakeConditionVariable(&buffer_not_full);
 
 		printf("---Thread id = %d took task from queue---\n", id);
-		ts();
+		task.ts(task.arg);
 	}
 }
