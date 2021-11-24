@@ -5,6 +5,11 @@ void sort_lines(char **lines, int lines_count);
 
 int main()
 {
+    int threads_count;
+
+    printf("Enter threads count: ");
+    scanf("%d", &threads_count);
+
     HANDLE file;
     char *file_name = "text.txt";
 
@@ -54,15 +59,36 @@ int main()
     }
 
     lines_count--;
+    free(lines[lines_count]);
 
     printf("Strings before sort:\n");
     for (int i = 0; i < lines_count; i++)
     {
         printf("Line %d: %s\n", i, lines[i]);
     }
-    //free(lines[lines_count]);
 
-    sort_lines(lines, lines_count);
+    int lines_per_thread = lines_count / threads_count;
+
+    create_thread_pool(threads_count);
+
+    lines_offset = 0; 
+    task_args task;
+    task.ts = sort_lines;
+    task.lines_count = lines_per_thread;
+    for (int i = 0; i < threads_count; i++, lines_offset += lines_per_thread)
+    {
+        task.lines = &lines[lines_offset];
+        if (threads_count - 1 == i)
+        {
+            task.lines_count = lines_count - lines_offset;
+        }
+
+        add_task_for_threadpool(task);
+    }
+
+    wait_all_tasks();
+
+    //sort_lines(lines, lines_count);
 
     printf("\nStrings after sort:\n");
     for (int i = 0; i < lines_count; i++)

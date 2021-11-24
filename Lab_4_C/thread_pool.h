@@ -3,10 +3,11 @@
 #include <Windows.h>
 
 // delegate
-typedef void (*task)(char **);
+typedef void (*task)(char **, int);
 typedef struct {
 	task ts;
-	char **arg;
+	char **lines;
+	int lines_count;
 }task_args;
 
 void create_thread_pool(int count);

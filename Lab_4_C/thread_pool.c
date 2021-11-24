@@ -114,6 +114,6 @@ void do_thread_work(int id)
 		WakeConditionVariable(&buffer_not_full);
 
 		printf("---Thread id = %d took task from queue---\n", id);
-		task.ts(task.arg);
+		task.ts(task.lines, task.lines_count);
 	}
 }
