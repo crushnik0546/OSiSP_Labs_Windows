@@ -68,6 +68,11 @@ int main()
         printf("Line %d: %s\n", i, lines[i]);
     }
 
+    if (threads_count > lines_count)
+    {
+        threads_count = lines_count;
+    }
+
     int lines_per_thread = lines_count / threads_count;
 
     create_thread_pool(threads_count);
