@@ -2,6 +2,7 @@
 
 
 void sort_lines(char **lines, int lines_count);
+void merge_lines(char **lines, int mid, char right);
 
 int main()
 {
@@ -88,14 +89,27 @@ int main()
 
     wait_all_tasks();
 
-    //sort_lines(lines, lines_count);
+    //merge_lines(lines, 3, 6);
+
+    int offset = 1;
+    int mid = 0, right = 0;
+    for (int i = 0; i < threads_count - 1; i++)
+    {
+        mid = lines_per_thread * offset;
+        right = lines_per_thread * (offset + 1) - 1;
+        if (i + 1 == threads_count - 1)
+        {
+            right = lines_count - 1;
+        }
+        merge_lines(lines, mid, right);
+        offset++;
+    }
 
     printf("\nStrings after sort:\n");
     for (int i = 0; i < lines_count; i++)
     {
         printf("Line %d: %s\n", i, lines[i]);
     }
-
 }
 
 void sort_lines(char **lines, int lines_count)
@@ -121,5 +135,56 @@ void sort_lines(char **lines, int lines_count)
                 free(tmp);
             }
         }
+    }
+}
+
+void merge_lines(char **lines, int mid, char right)
+{
+    int it1 = 0;
+    int it2 = 0;
+
+    char **result = (char **)malloc(right * sizeof(char *));
+
+    while (it1 < mid && mid + it2 <= right)
+    {
+        int len;
+
+        if (strcmp(lines[it1], lines[mid + it2]) > 0)
+        {
+            len = strlen(lines[mid + it2]) + 1;
+            result[it1 + it2] = (char *)malloc(len * sizeof(char));
+            memcpy(result[it1 + it2], lines[mid + it2], len);
+            it2++;
+        }
+        else
+        {
+            len = strlen(lines[it1]) + 1;
+            result[it1 + it2] = (char *)malloc(len * sizeof(char));
+            memcpy(result[it1 + it2], lines[it1], len);
+            it1++;
+        }
+    }
+
+    while (it1 < mid)
+    {
+        int len = strlen(lines[it1]) + 1;
+        result[it1 + it2] = (char *)malloc(len * sizeof(char));
+        memcpy(result[it1 + it2], lines[it1], len);
+        it1++;
+    }
+
+    while (mid + it2 <= right)
+    {
+        int len = strlen(lines[mid + it2]) + 1;
+        result[it1 + it2] = (char *)malloc(len * sizeof(char));
+        memcpy(result[it1 + it2], lines[mid + it2], len);
+        it2++;
+    }
+
+    for (int i = 0; i < it1 + it2; i++)
+    {
+        int len = strlen(result[i]) + 1;
+        lines[i] = realloc(lines[i], len * sizeof(char));
+        memcpy(lines[i], result[i], len * sizeof(char));
     }
 }
