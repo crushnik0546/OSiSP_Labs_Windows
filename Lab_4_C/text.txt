@@ -3,8 +3,6 @@ X line
 C line
 A line
 B line
-C line
-E line
-S line
+Y line
 AA line
-BB line
+ZXC line

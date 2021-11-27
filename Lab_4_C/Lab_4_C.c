@@ -4,9 +4,12 @@
 void sort_lines(char **lines, int lines_count);
 void merge_lines(char **lines, int mid, char right);
 
+//CRITICAL_SECTION sort;
+
 int main()
 {
     int threads_count;
+    //InitializeCriticalSection(&sort);
 
     printf("Enter threads count: ");
     scanf("%d", &threads_count);
@@ -94,8 +97,6 @@ int main()
 
     wait_all_tasks();
 
-    //merge_lines(lines, 3, 6);
-
     int offset = 1;
     int mid = 0, right = 0;
     for (int i = 0; i < threads_count - 1; i++)
@@ -119,6 +120,7 @@ int main()
 
 void sort_lines(char **lines, int lines_count)
 {
+    //EnterCriticalSection(&sort);
     for (int i = 0; i < lines_count - 1; i++)
     {
         for (int j = i; j < lines_count; j++)
@@ -141,6 +143,7 @@ void sort_lines(char **lines, int lines_count)
             }
         }
     }
+    //LeaveCriticalSection(&sort);
 }
 
 void merge_lines(char **lines, int mid, char right)
@@ -188,8 +191,7 @@ void merge_lines(char **lines, int mid, char right)
 
     for (int i = 0; i < it1 + it2; i++)
     {
-        int len = strlen(result[i]) + 1;
-        lines[i] = realloc(lines[i], len * sizeof(char));
-        memcpy(lines[i], result[i], len * sizeof(char));
+        free(lines[i]);
+        lines[i] = result[i];
     }
 }

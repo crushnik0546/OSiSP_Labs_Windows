@@ -15,7 +15,6 @@ int main() {
     {
         printf("Fail inject dll\n");
     }
-   
 }
 
 int inject(DWORD pid, char *find_str, char *replace_str)
@@ -106,7 +105,7 @@ DWORD get_process_id_by_name(LPCTSTR process_name) {
             if (!lstrcmpi(pt.szExeFile, process_name)) {
                 CloseHandle(hsnap);
 
-                printf("Process TempInject.exe has pid %d", pt.th32ProcessID);
+                printf("Process TempInject.exe has pid %d\n", pt.th32ProcessID);
 
                 return pt.th32ProcessID;
             }

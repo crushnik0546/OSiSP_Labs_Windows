@@ -7,9 +7,9 @@ int main()
 {
     //const char find[] = "12345";
 
-    find_str = (char *)malloc(sizeof(char) * 6);
+    find_str = (char *)malloc(sizeof(char) * strlen("abc\n"));
 
-    strcpy(find_str, "abc");
+    strcpy(find_str, "abc\n");
 
     while (1)
     {
@@ -19,4 +19,3 @@ int main()
 
     return 0;
 }
-
